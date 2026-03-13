@@ -26,19 +26,15 @@ ENV NODE_ENV=production
 # DogeUB documents PORT via env in copy.env
 ENV PORT=3000
 
-# Install only production deps
-COPY package*.json ./
-RUN npm ci --omit=dev && npm cache clean --force
+# Copy pre-installed node_modules from build stage (avoids re-running npm ci
+# which fails for tarball/GitHub-sourced packages in slim environments)
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/package.json ./package.json
 
 # Copy only what runtime needs:
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/public ./public
 COPY --from=build /app/server.js ./server.js
-
-# Optional files seen in repo root (safe to include)
-COPY --from=build /app/masqr.js ./masqr.js
-COPY --from=build /app/Checkfailed.html ./Checkfailed.html
-COPY --from=build /app/placeholder.svg ./placeholder.svg
 
 # Run as non-root (the official node image defines a 'node' user)
 USER node
